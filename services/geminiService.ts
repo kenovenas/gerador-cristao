@@ -104,10 +104,22 @@ export const generateYouTubeContent = async (
     return parsedContent;
   } catch (error) {
     console.error("Error generating content:", error);
-    if (error instanceof Error && (error.message.includes('API key not valid') || error.message.includes('invalid'))) {
-       throw new Error("Sua chave de API parece ser inválida. Por favor, verifique-a nas configurações.");
+    let userFriendlyMessage = "Falha ao gerar conteúdo. Verifique sua conexão com a internet e tente novamente.";
+    if (error instanceof Error) {
+        const lowerCaseError = error.message.toLowerCase();
+        if (lowerCaseError.includes('api key not valid') || lowerCaseError.includes('invalid api key')) {
+           userFriendlyMessage = "Sua chave de API é inválida ou expirou. Por favor, verifique-a nas configurações e tente novamente.";
+        } else if (lowerCaseError.includes('quota') || lowerCaseError.includes('429')) {
+            userFriendlyMessage = "Você atingiu o limite de requisições para sua chave de API. Por favor, tente novamente mais tarde ou verifique seu plano.";
+        } else if (lowerCaseError.includes('safety')) {
+            userFriendlyMessage = "O conteúdo não pôde ser gerado devido às políticas de segurança. Tente refinar o tema ou as ideias criativas para ser mais específico e claro.";
+        } else if (lowerCaseError.includes('billing')) {
+            userFriendlyMessage = "Há um problema com o faturamento da sua conta Google Cloud. Por favor, verifique se o faturamento está ativo para o seu projeto.";
+        } else {
+             userFriendlyMessage = "Falha ao gerar conteúdo. Verifique se sua chave de API está correta, se há conexão com a internet e tente novamente.";
+        }
     }
-    throw new Error("Falha ao gerar conteúdo. Verifique sua chave de API, conexão com a internet e tente novamente.");
+    throw new Error(userFriendlyMessage);
   }
 };
 
@@ -162,9 +174,19 @@ export const regenerateSectionContent = async (
 
     } catch (error) {
         console.error(`Error regenerating section "${section}":`, error);
-        if (error instanceof Error && (error.message.includes('API key not valid') || error.message.includes('invalid'))) {
-            throw new Error("Sua chave de API parece ser inválida.");
+        let userFriendlyMessage = `Falha ao regenerar a seção de ${section}.`;
+         if (error instanceof Error) {
+            const lowerCaseError = error.message.toLowerCase();
+            if (lowerCaseError.includes('api key not valid') || lowerCaseError.includes('invalid api key')) {
+               userFriendlyMessage = "Sua chave de API é inválida ou expirou. Não foi possível regenerar o conteúdo.";
+            } else if (lowerCaseError.includes('quota') || lowerCaseError.includes('429')) {
+                userFriendlyMessage = "Você atingiu o limite de requisições. Não foi possível regenerar o conteúdo.";
+            } else if (lowerCaseError.includes('safety')) {
+                userFriendlyMessage = "A regeneração foi bloqueada por políticas de segurança. Tente uma ideia diferente.";
+            } else if (lowerCaseError.includes('billing')) {
+                userFriendlyMessage = "Problema de faturamento na sua conta Google Cloud. A regeneração falhou.";
+            }
         }
-        throw new Error(`Falha ao regenerar a seção de ${section}.`);
+        throw new Error(userFriendlyMessage);
     }
 };
