@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { GeneratedContent, Conversation, UserInput } from './types';
-import { generateYouTubeContent } from './services/geminiService';
+import { generateYouTubeContent, regenerateSectionContent } from './services/geminiService';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -38,6 +38,7 @@ const App: React.FC = () => {
 
   const [apiKey, setApiKey] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [regeneratingSection, setRegeneratingSection] = useState<keyof GeneratedContent | null>(null);
 
 
   useEffect(() => {
@@ -129,16 +130,7 @@ const App: React.FC = () => {
     setActiveContent(null);
 
     try {
-      const result = await generateYouTubeContent(
-        apiKey,
-        userInput.theme, 
-        userInput.tone, 
-        userInput.audience, 
-        userInput.creativeIdea, 
-        userInput.titleIdeas, 
-        userInput.descriptionIdeas, 
-        userInput.thumbnailIdeas
-      );
+      const result = await generateYouTubeContent(apiKey, userInput);
       
       const newConversation: Conversation = {
         id: Date.now().toString(),
@@ -156,6 +148,63 @@ const App: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRegenerateSection = async (sectionKey: keyof GeneratedContent, idea: string) => {
+    if (!apiKey || !activeContent || !activeConversationId) {
+        setError("Não é possível regenerar. Faltam dados da conversa ou chave de API.");
+        return;
+    }
+    
+    const conversation = history.find(c => c.id === activeConversationId);
+    if (!conversation) return;
+
+    setRegeneratingSection(sectionKey);
+    setError(null);
+
+    try {
+        const result = await regenerateSectionContent(
+            apiKey,
+            sectionKey,
+            conversation.input,
+            activeContent,
+            idea
+        );
+        
+        const updatedContent = { ...activeContent, ...result };
+        setActiveContent(updatedContent);
+
+        setHistory(prev => prev.map(conv => 
+            conv.id === activeConversationId ? { ...conv, content: updatedContent } : conv
+        ));
+
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'Falha ao regenerar esta seção.');
+    } finally {
+        setRegeneratingSection(null);
+    }
+  };
+
+  const handleContentChange = (sectionKey: keyof GeneratedContent, index: number | null, value: string) => {
+    if (!activeContent) return;
+
+    const newContent = { ...activeContent };
+    
+    if (index === null) {
+        (newContent[sectionKey] as string) = value;
+    } else {
+        const newArray = [...(newContent[sectionKey] as string[])];
+        newArray[index] = value;
+        (newContent[sectionKey] as string[]) = newArray;
+    }
+
+    setActiveContent(newContent);
+    
+    if (activeConversationId) {
+        setHistory(prev => prev.map(conv => 
+            conv.id === activeConversationId ? { ...conv, content: newContent } : conv
+        ));
     }
   };
   
@@ -280,12 +329,48 @@ const App: React.FC = () => {
               <ResultSection 
                 icon={<ScriptIcon />} 
                 title="📜 Roteiro Narrativo" 
+                sectionKey="script"
                 content={activeContent.script}
+                onContentChange={handleContentChange}
+                onRegenerate={handleRegenerateSection}
+                isRegenerating={regeneratingSection === 'script'}
               />
-              <ResultSection icon={<TitleIcon />} title="🏷️ Títulos Sugeridos" content={activeContent.titles} />
-              <ResultSection icon={<TagIcon />} title="🔖 Tags Otimizadas" content={activeContent.tags.join(', ')} />
-              <ResultSection icon={<DescriptionIcon />} title="📄 Descrição (SEO)" content={activeContent.description} />
-              <ResultSection icon={<ThumbnailIcon />} title="🖼️ Prompts para Thumbnails" content={activeContent.thumbnailPrompts} />
+              <ResultSection 
+                icon={<TitleIcon />} 
+                title="🏷️ Títulos Sugeridos" 
+                sectionKey="titles"
+                content={activeContent.titles}
+                onContentChange={handleContentChange}
+                onRegenerate={handleRegenerateSection}
+                isRegenerating={regeneratingSection === 'titles'}
+              />
+              <ResultSection 
+                icon={<TagIcon />} 
+                title="🔖 Tags Otimizadas" 
+                sectionKey="tags"
+                content={activeContent.tags}
+                onContentChange={handleContentChange}
+                onRegenerate={handleRegenerateSection}
+                isRegenerating={regeneratingSection === 'tags'}
+              />
+              <ResultSection 
+                icon={<DescriptionIcon />} 
+                title="📄 Descrição (SEO)" 
+                sectionKey="description"
+                content={activeContent.description}
+                onContentChange={handleContentChange}
+                onRegenerate={handleRegenerateSection}
+                isRegenerating={regeneratingSection === 'description'}
+              />
+              <ResultSection 
+                icon={<ThumbnailIcon />} 
+                title="🖼️ Prompts para Thumbnails" 
+                sectionKey="thumbnailPrompts"
+                content={activeContent.thumbnailPrompts}
+                onContentChange={handleContentChange}
+                onRegenerate={handleRegenerateSection}
+                isRegenerating={regeneratingSection === 'thumbnailPrompts'}
+              />
             </div>
           )}
         </main>

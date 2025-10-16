@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { GeneratedContent } from '../types';
+import type { GeneratedContent, UserInput } from '../types';
 
 const model = 'gemini-2.5-pro';
 
@@ -33,16 +33,13 @@ const contentSchema = {
   required: ['script', 'titles', 'tags', 'description', 'thumbnailPrompts'],
 };
 
+
 export const generateYouTubeContent = async (
   apiKey: string,
-  theme: string,
-  tone: string,
-  audience: string,
-  creativeIdea: string,
-  titleIdeas: string,
-  descriptionIdeas: string,
-  thumbnailIdeas: string,
+  userInput: UserInput,
 ): Promise<GeneratedContent> => {
+  const { theme, tone, audience, creativeIdea, titleIdeas, descriptionIdeas, thumbnailIdeas } = userInput;
+  
   const prompt = `
     You are a theologian with ancient wisdom and a deep knowledge of the Christian Bible. Your mission is to transform the received theme or passage into a complete, YouTube-optimized content package, acting as an expert in Christian communication and SEO.
 
@@ -112,4 +109,62 @@ export const generateYouTubeContent = async (
     }
     throw new Error("Falha ao gerar conteúdo. Verifique sua chave de API, conexão com a internet e tente novamente.");
   }
+};
+
+
+// --- Regeneration Logic ---
+
+const regenerationPrompts: Record<keyof GeneratedContent, (input: UserInput, current: GeneratedContent, idea: string) => string> = {
+    script: (input, current, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", tom "${input.tone}" e público "${input.audience}", gere novamente um roteiro narrativo com aproximadamente 10.500 caracteres. Incorpore esta nova ideia criativa: "${idea}". A ideia criativa original era "${input.creativeIdea}". O roteiro deve ser apenas o texto da narração e terminar com uma chamada para ação.`,
+    titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e cujo roteiro começa com: "${current.script.substring(0, 400)}...", gere 5 novos títulos criativos e otimizados para SEO. Leve em conta esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
+    tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e títulos como "${current.titles.join(', ')}", gere uma nova lista de 10 a 15 tags de YouTube relevantes. Considere esta nova ideia: "${idea}".`,
+    description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e um resumo do roteiro: "${current.script.substring(0, 400)}...", escreva uma nova descrição de YouTube otimizada para SEO, bem estruturada e com até 2.000 caracteres. Ela deve terminar com uma forte CTA. Incorpore esta nova ideia: "${idea}".`,
+    thumbnailPrompts: (input, current, idea) => `Você é um diretor de arte criativo. Para um vídeo com o tema "${input.theme}" e o título "${current.titles[0]}", gere 3 novos prompts visualmente impactantes para a thumbnail. Os prompts devem estar em Português (Brasil). Incorpore esta nova ideia criativa: "${idea}".`,
+};
+
+const regenerationSchemas: Record<keyof GeneratedContent, any> = {
+    script: { type: Type.OBJECT, properties: { script: contentSchema.properties.script }, required: ['script'] },
+    titles: { type: Type.OBJECT, properties: { titles: contentSchema.properties.titles }, required: ['titles'] },
+    tags: { type: Type.OBJECT, properties: { tags: contentSchema.properties.tags }, required: ['tags'] },
+    description: { type: Type.OBJECT, properties: { description: contentSchema.properties.description }, required: ['description'] },
+    thumbnailPrompts: { type: Type.OBJECT, properties: { thumbnailPrompts: contentSchema.properties.thumbnailPrompts }, required: ['thumbnailPrompts'] },
+};
+
+
+export const regenerateSectionContent = async (
+    apiKey: string,
+    section: keyof GeneratedContent,
+    userInput: UserInput,
+    currentContent: GeneratedContent,
+    idea: string
+): Promise<Partial<GeneratedContent>> => {
+    const prompt = regenerationPrompts[section](userInput, currentContent, idea || 'Use sua criatividade para melhorar o conteúdo existente.');
+    const schema = regenerationSchemas[section];
+
+    try {
+        if (!apiKey) {
+            throw new Error("API Key não fornecida.");
+        }
+        const ai = new GoogleGenAI({ apiKey });
+
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: schema,
+                temperature: 0.9, // Higher temperature for more creative regeneration
+            },
+        });
+
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as Partial<GeneratedContent>;
+
+    } catch (error) {
+        console.error(`Error regenerating section "${section}":`, error);
+        if (error instanceof Error && (error.message.includes('API key not valid') || error.message.includes('invalid'))) {
+            throw new Error("Sua chave de API parece ser inválida.");
+        }
+        throw new Error(`Falha ao regenerar a seção de ${section}.`);
+    }
 };
