@@ -69,6 +69,12 @@ const App: React.FC = () => {
     setApiKey(newApiKey);
     localStorage.setItem('geminiApiKey', newApiKey);
   };
+  
+  const handleRemoveApiKey = () => {
+    setApiKey('');
+    localStorage.removeItem('geminiApiKey');
+    setIsApiKeyModalOpen(false);
+  };
 
   const handleInputChange = (field: keyof UserInput, value: string) => {
     setUserInput(prev => ({ ...prev, [field]: value }));
@@ -208,6 +214,7 @@ const App: React.FC = () => {
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onSave={handleSaveApiKey}
+        onRemove={handleRemoveApiKey}
         currentApiKey={apiKey}
       />
       <div className="flex-grow flex flex-col md:flex-row">
