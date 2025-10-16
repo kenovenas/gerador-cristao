@@ -19,6 +19,7 @@ const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-
 
 const App: React.FC = () => {
   const [userInput, setUserInput] = useState<UserInput>({
+    projectName: 'A Fé dos Espiões',
     theme: 'Números 13 – Os espias e a Terra Prometida',
     tone: 'Inspirador e devocional',
     audience: 'Jovens cristãos e líderes de célula',
@@ -82,6 +83,7 @@ const App: React.FC = () => {
 
   const handleNewConversation = () => {
     setUserInput({
+      projectName: '',
       theme: '',
       tone: '',
       audience: '',
@@ -118,7 +120,7 @@ const App: React.FC = () => {
       setIsApiKeyModalOpen(true);
       return;
     }
-    if (!userInput.theme || !userInput.tone || !userInput.audience) {
+    if (!userInput.projectName || !userInput.theme || !userInput.tone || !userInput.audience) {
       setError('Por favor, preencha os campos obrigatórios.');
       return;
     }
@@ -140,7 +142,7 @@ const App: React.FC = () => {
       
       const newConversation: Conversation = {
         id: Date.now().toString(),
-        title: userInput.theme.substring(0, 40) + (userInput.theme.length > 40 ? '...' : ''),
+        title: userInput.projectName,
         timestamp: Date.now(),
         input: userInput,
         content: result,
@@ -161,6 +163,7 @@ const App: React.FC = () => {
     if (!activeContent) return;
     
     let fullText = `Gerador Bíblico de Conteúdo para YouTube\n`;
+    fullText += `Projeto: ${userInput.projectName}\n`;
     fullText += `Tema: ${userInput.theme}\n\n`;
     
     fullText += `📜 Roteiro Narrativo\n====================\n${activeContent.script}\n\n`;
@@ -173,15 +176,15 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'conteudo_biblico_gerado.txt';
+    link.download = `${userInput.projectName.replace(/\s+/g, '_')}_conteudo.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  const renderInput = (id: keyof UserInput, label: string, required = true, isTextArea = false) => (
-    <div className="mb-4">
+  const renderInput = (id: keyof UserInput, label: string, required = true, isTextArea = false, placeholder?: string, className = '') => (
+    <div className={`mb-4 ${className}`}>
       <label htmlFor={id} className="block text-sm font-medium text-brand-dark mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
@@ -192,7 +195,7 @@ const App: React.FC = () => {
           onChange={(e) => handleInputChange(id, e.target.value)}
           rows={id.includes('Ideas') ? 1 : 2}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue resize-none overflow-hidden"
-          placeholder={`Ex: ${label.split('(')[0].trim()}`}
+          placeholder={placeholder || `Ex: ${label.split('(')[0].trim()}`}
         />
       ) : (
         <input
@@ -201,7 +204,7 @@ const App: React.FC = () => {
           value={userInput[id]}
           onChange={(e) => handleInputChange(id, e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-brand-blue focus:border-brand-blue"
-          placeholder={`Ex: ${label.split('(')[0].trim()}`}
+          placeholder={placeholder || `Ex: ${label.split('(')[0].trim()}`}
         />
       )}
     </div>
@@ -227,6 +230,7 @@ const App: React.FC = () => {
         />
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-xl">
+            {renderInput('projectName', 'Nome do Projeto (para identificação)', true, false, 'Ex: Sermão sobre a Fé', 'md:col-span-2')}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {renderInput('theme', '📖 Tema ou passagem bíblica', true, true)}
               {renderInput('tone', '🎭 Tom ou estilo desejado')}

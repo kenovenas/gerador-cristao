@@ -9,6 +9,7 @@ export interface GeneratedContent {
 }
 
 export interface UserInput {
+  projectName: string;
   theme: string;
   tone: string;
   audience: string;
