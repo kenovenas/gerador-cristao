@@ -7,6 +7,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ResultSection from './components/ResultSection';
 import HistorySidebar from './components/HistorySidebar';
 import AutoResizeTextarea from './components/AutoResizeTextarea';
+import ApiKeyModal from './components/ApiKeyModal';
 
 // Icons
 const ScriptIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
@@ -34,7 +35,18 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
+  const [apiKey, setApiKey] = useState<string>('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+
+
   useEffect(() => {
+    const storedApiKey = localStorage.getItem('geminiApiKey');
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+    } else {
+      setIsApiKeyModalOpen(true);
+    }
+    
     try {
       const storedHistory = localStorage.getItem('youtubeBibleGeneratorHistory');
       if (storedHistory) {
@@ -52,6 +64,11 @@ const App: React.FC = () => {
       console.error("Failed to save history to localStorage", e);
     }
   }, [history]);
+
+  const handleSaveApiKey = (newApiKey: string) => {
+    setApiKey(newApiKey);
+    localStorage.setItem('geminiApiKey', newApiKey);
+  };
 
   const handleInputChange = (field: keyof UserInput, value: string) => {
     setUserInput(prev => ({ ...prev, [field]: value }));
@@ -90,6 +107,11 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (!apiKey) {
+      setError('Por favor, configure sua chave de API do Gemini antes de gerar conteúdo.');
+      setIsApiKeyModalOpen(true);
+      return;
+    }
     if (!userInput.theme || !userInput.tone || !userInput.audience) {
       setError('Por favor, preencha os campos obrigatórios.');
       return;
@@ -100,6 +122,7 @@ const App: React.FC = () => {
 
     try {
       const result = await generateYouTubeContent(
+        apiKey,
         userInput.theme, 
         userInput.tone, 
         userInput.audience, 
@@ -180,7 +203,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen font-sans bg-brand-light">
-      <Header />
+      <Header onOpenSettings={() => setIsApiKeyModalOpen(true)} />
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onSave={handleSaveApiKey}
+        currentApiKey={apiKey}
+      />
       <div className="flex-grow flex flex-col md:flex-row">
         <HistorySidebar 
             history={history}
@@ -210,11 +239,16 @@ const App: React.FC = () => {
             <div className="text-center mt-8">
               <button
                 onClick={handleGenerate}
-                disabled={isLoading}
+                disabled={isLoading || !apiKey}
                 className="px-8 py-3 bg-brand-gold text-brand-dark font-bold text-lg rounded-md hover:bg-yellow-500 transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 shadow-lg"
               >
                 {isLoading ? 'Gerando...' : 'Gerar Conteúdo Completo'}
               </button>
+              {!apiKey && (
+                  <p className="text-sm text-red-600 mt-2">
+                      Por favor, configure sua Chave de API para habilitar a geração.
+                  </p>
+              )}
             </div>
           </div>
 

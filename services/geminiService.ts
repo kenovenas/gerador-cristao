@@ -1,12 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { GeneratedContent } from '../types';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const model = 'gemini-2.5-pro';
 
 const contentSchema = {
@@ -40,6 +34,7 @@ const contentSchema = {
 };
 
 export const generateYouTubeContent = async (
+  apiKey: string,
   theme: string,
   tone: string,
   audience: string,
@@ -92,6 +87,11 @@ export const generateYouTubeContent = async (
   `;
 
   try {
+    if (!apiKey) {
+      throw new Error("API Key não fornecida. Por favor, configure sua chave de API nas configurações.");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
@@ -107,6 +107,9 @@ export const generateYouTubeContent = async (
     return parsedContent;
   } catch (error) {
     console.error("Error generating content:", error);
-    throw new Error("Falha ao gerar conteúdo. Por favor, verifique sua chave de API e tente novamente.");
+    if (error instanceof Error && (error.message.includes('API key not valid') || error.message.includes('invalid'))) {
+       throw new Error("Sua chave de API parece ser inválida. Por favor, verifique-a nas configurações.");
+    }
+    throw new Error("Falha ao gerar conteúdo. Verifique sua chave de API, conexão com a internet e tente novamente.");
   }
 };
