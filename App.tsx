@@ -191,7 +191,9 @@ const App: React.FC = () => {
 
     const newContent = { ...activeContent };
     
-    if (index === null) {
+    if (sectionKey === 'tags' && index === null) {
+        (newContent[sectionKey] as string[]) = value.split(',').map(tag => tag.trim()).filter(Boolean);
+    } else if (index === null) {
         (newContent[sectionKey] as string) = value;
     } else {
         const newArray = [...(newContent[sectionKey] as string[])];

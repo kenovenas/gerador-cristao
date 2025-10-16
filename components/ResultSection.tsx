@@ -27,7 +27,13 @@ const ResultSection: React.FC<ResultSectionProps> = ({ icon, title, sectionKey, 
   };
 
   const isList = Array.isArray(content);
-  const textToCopy = isList ? content.join('\n') : content;
+  const isTagsSection = sectionKey === 'tags';
+  
+  const textToCopy = isTagsSection 
+    ? (content as string[]).join(', ') 
+    : isList 
+    ? (content as string[]).join('\n') 
+    : (content as string);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -46,9 +52,9 @@ const ResultSection: React.FC<ResultSectionProps> = ({ icon, title, sectionKey, 
         </button>
       </div>
 
-      {isList ? (
+      {isList && !isTagsSection ? (
         <ul className="list-inside space-y-2 text-brand-dark">
-          {content.map((item, index) => (
+          {(content as string[]).map((item, index) => (
             <li key={index} className="flex items-center group gap-2">
               <span className="text-gray-400">&#8226;</span>
               <input
@@ -65,9 +71,15 @@ const ResultSection: React.FC<ResultSectionProps> = ({ icon, title, sectionKey, 
             </li>
           ))}
         </ul>
+      ) : isTagsSection ? (
+         <AutoResizeTextarea
+            value={(content as string[]).join(', ')}
+            onChange={(e) => onContentChange(sectionKey, null, e.target.value)}
+            className="w-full text-brand-dark whitespace-pre-wrap leading-relaxed bg-transparent focus:bg-yellow-50 focus:outline-none rounded-md p-1 -m-1 transition-colors"
+        />
       ) : (
         <AutoResizeTextarea
-            value={content}
+            value={content as string}
             onChange={(e) => onContentChange(sectionKey, null, e.target.value)}
             className="w-full text-brand-dark whitespace-pre-wrap leading-relaxed bg-transparent focus:bg-yellow-50 focus:outline-none rounded-md p-1 -m-1 transition-colors"
         />
@@ -103,7 +115,7 @@ const ResultSection: React.FC<ResultSectionProps> = ({ icon, title, sectionKey, 
         </div>
       )}
 
-      {!isList && <CopyButton textToCopy={textToCopy} />}
+      {(!isList || isTagsSection) && <CopyButton textToCopy={textToCopy} />}
     </div>
   );
 };
