@@ -17,7 +17,7 @@ const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({ value, ...props
     }
   }, [value]);
 
-  return <textarea ref={textareaRef} {...props} />;
+  return <textarea ref={textareaRef} value={value} {...props} />;
 };
 
 export default AutoResizeTextarea;
