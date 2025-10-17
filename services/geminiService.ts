@@ -128,11 +128,11 @@ export const generateYouTubeContent = async (
 // --- Regeneration Logic ---
 
 const regenerationPrompts: Record<keyof GeneratedContent, (input: UserInput, current: GeneratedContent, idea: string) => string> = {
-    script: (input, current, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", tom "${input.tone}" e público "${input.audience}", gere novamente um roteiro narrativo com aproximadamente 10.500 caracteres. Incorpore esta nova ideia criativa: "${idea}". A ideia criativa original era "${input.creativeIdea}". O roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos para facilitar a locução. IMPORTANTE: cada parágrafo deve ter no máximo 200 caracteres. O roteiro deve terminar com uma chamada para ação.`,
-    titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e cujo roteiro começa com: "${current.script.substring(0, 400)}...", gere 5 novos títulos criativos e otimizados para SEO. Leve em conta esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
-    tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e títulos como "${current.titles.join(', ')}", gere uma nova lista de 10 a 15 tags de YouTube relevantes. Considere esta nova ideia: "${idea}".`,
-    description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e um resumo do roteiro: "${current.script.substring(0, 400)}...", escreva uma nova descrição de YouTube otimizada para SEO, bem estruturada e com até 2.000 caracteres. Ela deve terminar com uma forte CTA. Incorpore esta nova ideia: "${idea}".`,
-    thumbnailPrompts: (input, current, idea) => `Você é um diretor de arte criativo. Para um vídeo com o tema "${input.theme}" e o título "${current.titles[0]}", gere 3 novos prompts visualmente impactantes para a thumbnail. Os prompts devem estar em Português (Brasil). Incorpore esta nova ideia criativa: "${idea}".`,
+    script: (input, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", gere uma **nova versão completamente reescrita** do roteiro narrativo com aproximadamente 10.500 caracteres. O objetivo é criar uma alternativa distinta, não apenas uma pequena modificação. Incorpore esta nova ideia criativa: "${idea}". O roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos (máximo 200 caracteres cada) e terminar com uma chamada para ação.`,
+    titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere 5 **novos e diferentes** títulos criativos. Os títulos atuais são: "${current.titles.join('", "')}". Sua tarefa é criar alternativas que não sejam parecidas. Incorpore esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
+    tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere uma **nova e diferente** lista de 10 a 15 tags relevantes. A lista de tags atual é: "${current.tags.join(', ')}". Evite repeti-las e crie alternativas. Incorpore esta nova ideia: "${idea}".`,
+    description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", escreva uma **nova e diferente** descrição otimizada para SEO. A descrição atual começa com: "${current.description.substring(0, 200)}...". Crie uma versão alternativa. Incorpore esta nova ideia: "${idea}". A nova descrição deve ser bem estruturada, ter até 2.000 caracteres e terminar com uma forte CTA.`,
+    thumbnailPrompts: (input, current, idea) => `Você é um diretor de arte criativo. Para um vídeo sobre "${input.theme}", gere 3 **novos e diferentes** prompts para a thumbnail. Os prompts atuais são: "${current.thumbnailPrompts.join('", "')}". Crie alternativas distintas. Incorpore esta nova ideia criativa: "${idea}". Os prompts devem estar em Português (Brasil).`,
 };
 
 const regenerationSchemas: Record<keyof GeneratedContent, any> = {
@@ -151,7 +151,9 @@ export const regenerateSectionContent = async (
     currentContent: GeneratedContent,
     idea: string
 ): Promise<Partial<GeneratedContent>> => {
-    const prompt = regenerationPrompts[section](userInput, currentContent, idea || 'Use sua criatividade para melhorar o conteúdo existente.');
+    const promptGenerator = regenerationPrompts[section];
+    // @ts-ignore
+    const prompt = promptGenerator(userInput, currentContent, idea || 'Use sua criatividade para melhorar o conteúdo existente.');
     const schema = regenerationSchemas[section];
 
     try {
