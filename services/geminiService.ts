@@ -8,7 +8,7 @@ const contentSchema = {
   properties: {
     script: {
       type: Type.STRING,
-      description: "The complete narrative script of approximately 10,500 characters, containing only the narration text and ending with a call to action.",
+      description: "The complete narrative script of approximately 10,500 characters, structured into short paragraphs for easy narration, where each paragraph must have a maximum of 200 characters. It contains only the narration text and ends with a call to action.",
     },
     titles: {
       type: Type.ARRAY,
@@ -59,6 +59,7 @@ export const generateYouTubeContent = async (
     1. Narrative Script:
       - VERY IMPORTANT: The script must be extensive, with approximately 10,500 characters. This is crucial for a long-form video.
       - Generate ONLY the narrative text for a voice-over. Do NOT include any timestamps, section headers (like "Introduction", "Hook", etc.), or scene directions.
+      - Structure: The script MUST be well-structured into short, clear paragraphs to make narration easier. VERY IMPORTANT: Each paragraph must have a maximum of 200 characters. Use line breaks to separate paragraphs naturally.
       - Language: Must be fluid, devotional, spiritual, and theologically consistent with the Christian faith.
       - Content: Create a fictional story or a deep narrative inspired by the passage, exploring characters, context, and spiritual lessons in a captivating way.
       - Final CTA: Conclude the script with a powerful and inspiring call to action, inviting the viewer to subscribe to the channel, share the video, and leave a comment about their reflections.
@@ -127,7 +128,7 @@ export const generateYouTubeContent = async (
 // --- Regeneration Logic ---
 
 const regenerationPrompts: Record<keyof GeneratedContent, (input: UserInput, current: GeneratedContent, idea: string) => string> = {
-    script: (input, current, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", tom "${input.tone}" e público "${input.audience}", gere novamente um roteiro narrativo com aproximadamente 10.500 caracteres. Incorpore esta nova ideia criativa: "${idea}". A ideia criativa original era "${input.creativeIdea}". O roteiro deve ser apenas o texto da narração e terminar com uma chamada para ação.`,
+    script: (input, current, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", tom "${input.tone}" e público "${input.audience}", gere novamente um roteiro narrativo com aproximadamente 10.500 caracteres. Incorpore esta nova ideia criativa: "${idea}". A ideia criativa original era "${input.creativeIdea}". O roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos para facilitar a locução. IMPORTANTE: cada parágrafo deve ter no máximo 200 caracteres. O roteiro deve terminar com uma chamada para ação.`,
     titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e cujo roteiro começa com: "${current.script.substring(0, 400)}...", gere 5 novos títulos criativos e otimizados para SEO. Leve em conta esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
     tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e títulos como "${current.titles.join(', ')}", gere uma nova lista de 10 a 15 tags de YouTube relevantes. Considere esta nova ideia: "${idea}".`,
     description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo com o tema "${input.theme}" e um resumo do roteiro: "${current.script.substring(0, 400)}...", escreva uma nova descrição de YouTube otimizada para SEO, bem estruturada e com até 2.000 caracteres. Ela deve terminar com uma forte CTA. Incorpore esta nova ideia: "${idea}".`,
