@@ -92,7 +92,7 @@ export const generateYouTubeContent = async (
 
     const response = await ai.models.generateContent({
       model,
-      contents: prompt,
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseMimeType: 'application/json',
         responseSchema: contentSchema,
@@ -162,7 +162,7 @@ export const regenerateSectionContent = async (
 
         const response = await ai.models.generateContent({
             model,
-            contents: prompt,
+            contents: [{ parts: [{ text: prompt }] }],
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: schema,
