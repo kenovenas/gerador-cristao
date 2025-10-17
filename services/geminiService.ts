@@ -92,7 +92,7 @@ export const generateYouTubeContent = async (
 
     const response = await ai.models.generateContent({
       model,
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: prompt,
       config: {
         responseMimeType: 'application/json',
         responseSchema: contentSchema,
@@ -128,7 +128,7 @@ export const generateYouTubeContent = async (
 // --- Regeneration Logic ---
 
 const regenerationPrompts: Record<keyof GeneratedContent, (input: UserInput, current: GeneratedContent, idea: string) => string> = {
-    script: (input, idea) => `Você é um teólogo e roteirista. Baseado no tema "${input.theme}", gere uma **nova versão completamente reescrita** do roteiro narrativo com aproximadamente 10.500 caracteres. O objetivo é criar uma alternativa distinta, não apenas uma pequena modificação. Incorpore esta nova ideia criativa: "${idea}". O roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos (máximo 200 caracteres cada) e terminar com uma chamada para ação.`,
+    script: (input, current, idea) => `Você é um teólogo e roteirista. O tema é "${input.theme}". A ideia criativa para esta nova versão é: "${idea}". O roteiro atual possui cerca de ${current.script.length} caracteres. Gere uma **nova versão completamente reescrita** do roteiro narrativo com aproximadamente 10.500 caracteres, evitando similaridades com o texto atual. O novo roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos (máximo 200 caracteres cada) e terminar com uma chamada para ação.`,
     titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere 5 **novos e diferentes** títulos criativos. Os títulos atuais são: "${current.titles.join('", "')}". Sua tarefa é criar alternativas que não sejam parecidas. Incorpore esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
     tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere uma **nova e diferente** lista de 10 a 15 tags relevantes. A lista de tags atual é: "${current.tags.join(', ')}". Evite repeti-las e crie alternativas. Incorpore esta nova ideia: "${idea}".`,
     description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", escreva uma **nova e diferente** descrição otimizada para SEO. A descrição atual começa com: "${current.description.substring(0, 200)}...". Crie uma versão alternativa. Incorpore esta nova ideia: "${idea}". A nova descrição deve ser bem estruturada, ter até 2.000 caracteres e terminar com uma forte CTA.`,
@@ -152,7 +152,6 @@ export const regenerateSectionContent = async (
     idea: string
 ): Promise<Partial<GeneratedContent>> => {
     const promptGenerator = regenerationPrompts[section];
-    // @ts-ignore
     const prompt = promptGenerator(userInput, currentContent, idea || 'Use sua criatividade para melhorar o conteúdo existente.');
     const schema = regenerationSchemas[section];
 
@@ -164,7 +163,7 @@ export const regenerateSectionContent = async (
 
         const response = await ai.models.generateContent({
             model,
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: prompt,
             config: {
                 responseMimeType: 'application/json',
                 responseSchema: schema,
