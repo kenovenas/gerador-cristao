@@ -8,7 +8,7 @@ const contentSchema = {
   properties: {
     script: {
       type: Type.STRING,
-      description: "The complete narrative script of approximately 10,500 characters, structured into short paragraphs for easy narration, where each paragraph must have a maximum of 200 characters. It contains only the narration text and ends with a call to action.",
+      description: "The complete video script for a 10-minute video. The script MUST be structured with scene headings (e.g., CENA 1), followed by detailed descriptions for VISUAL (camera shots, scenes), ÁUDIO (music, sound effects, narration), and optionally TEXTO (on-screen text). The narration part (NARRAÇÃO) alone must be around 1500 words to meet the 10-minute duration. It must start with a note like '(NOTA PARA O EDITOR: O idioma desta narração é Português do Brasil.)'.",
     },
     titles: {
       type: Type.ARRAY,
@@ -56,13 +56,28 @@ export const generateYouTubeContent = async (
 
     Generate the following content strictly in the requested JSON format:
 
-    1. Narrative Script:
-      - VERY IMPORTANT: The script must be extensive, with approximately 10,500 characters. This is crucial for a long-form video.
-      - Generate ONLY the narrative text for a voice-over. Do NOT include any timestamps, section headers (like "Introduction", "Hook", etc.), or scene directions.
-      - Structure: The script MUST be well-structured into short, clear paragraphs to make narration easier. VERY IMPORTANT: Each paragraph must have a maximum of 200 characters. Use line breaks to separate paragraphs naturally.
-      - Language: Must be fluid, devotional, spiritual, and theologically consistent with the Christian faith.
-      - Content: Create a fictional story or a deep narrative inspired by the passage, exploring characters, context, and spiritual lessons in a captivating way.
-      - Final CTA: Conclude the script with a powerful and inspiring call to action, inviting the viewer to subscribe to the channel, share the video, and leave a comment about their reflections.
+    1. Video Script (Roteiro de Vídeo):
+      - Editor's Note: The script MUST begin with a clear note for the video editor, such as "(NOTA PARA O EDITOR: O idioma desta narração é Português do Brasil.)" to prevent errors in audio generation in other tools.
+      - Duration and Length (CRITICAL REQUIREMENT): The script MUST be for a 10-minute YouTube video. This means the **NARRAÇÃO (narration) part ALONE** must contain approximately **1500 words** (which corresponds to about 9,000 to 10,500 characters of spoken text). Do not count the VISUAL or ÁUDIO descriptions in this word count. The total script will be significantly longer. Generate enough scenes and narration to meet this 10-minute length requirement.
+      - Format: Structure the script clearly with scene headings. Each scene must contain descriptions for VISUAL, ÁUDIO, and sometimes TEXTO (on-screen text).
+      - Example Scene Structure:
+        CENA 1
+        VISUAL: Close-up on an ancient scroll, with dramatic lighting. The camera slowly pans across the Hebrew text.
+        ÁUDIO: Mysterious and epic soundtrack begins. Sound of wind blowing.
+        NARRAÇÃO: (Off) "No princípio dos tempos, quando a fé era forjada no deserto..."
+        TEXTO: [On-screen] Gênesis 1:1
+
+        CENA 2
+        VISUAL: Wide shot of a vast desert at sunset. Silhouettes of travelers are seen in the distance.
+        ÁUDIO: Soundtrack swells. The sound of footsteps on sand.
+        NARRAÇÃO: (Off) "Homens e mulheres caminhavam por uma terra de promessas e provações..."
+      - Content:
+        - Create a compelling narrative or deep reflection based on the provided theme/passage.
+        - The visual descriptions (VISUAL) should be vivid and suggest specific camera shots (e.g., close-up, wide shot), lighting, and actions.
+        - The audio descriptions (ÁUDIO) should include suggestions for background music, sound effects, and the tone of the narration.
+        - The narration (NARRAÇÃO) should be integrated within the audio descriptions. For easy voice-over, break the narration into clear paragraphs. The absolute priority is to ensure the total narration length reaches the 10-minute target.
+        - Language: Must be fluid, devotional, spiritual, and theologically consistent with the Christian faith.
+      - Final CTA: Conclude the script with a powerful and inspiring call to action, inviting the viewer to subscribe, share, and comment. This should be part of the final scene's narration and visuals.
 
     2. YouTube Titles:
       - Quantity: Exactly 5 suggestions.
@@ -128,7 +143,7 @@ export const generateYouTubeContent = async (
 // --- Regeneration Logic ---
 
 const regenerationPrompts: Record<keyof GeneratedContent, (input: UserInput, current: GeneratedContent, idea: string) => string> = {
-    script: (input, current, idea) => `Você é um teólogo e roteirista. O tema é "${input.theme}". A ideia criativa para esta nova versão é: "${idea}". O roteiro atual possui cerca de ${current.script.length} caracteres. Gere uma **nova versão completamente reescrita** do roteiro narrativo com aproximadamente 10.500 caracteres, evitando similaridades com o texto atual. O novo roteiro deve ser apenas o texto da narração, bem estruturado em parágrafos curtos (máximo 200 caracteres cada) e terminar com uma chamada para ação.`,
+    script: (input, current, idea) => `Você é um teólogo e roteirista de vídeos. O tema é "${input.theme}". A ideia criativa para esta nova versão é: "${idea}". O roteiro anterior foi muito curto. Gere uma **nova versão completamente reescrita e MUITO mais longa** do roteiro para um vídeo de 10 minutos. **REQUISITO CRÍTICO:** A **parte da NARRAÇÃO, por si só,** deve ter aproximadamente **1500 palavras** (cerca de 9.000 a 10.500 caracteres de texto falado). A prioridade máxima é atingir esta meta de duração. O roteiro deve começar com a nota '(NOTA PARA O EDITOR: O idioma desta narração é Português do Brasil.)'. Estruture com CENA, VISUAL, ÁUDIO (incluindo NARRAÇÃO). Termine com uma chamada para ação.`,
     titles: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere 5 **novos e diferentes** títulos criativos. Os títulos atuais são: "${current.titles.join('", "')}". Sua tarefa é criar alternativas que não sejam parecidas. Incorpore esta nova sugestão: "${idea}". Pelo menos um título deve ter uma CTA.`,
     tags: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", gere uma **nova e diferente** lista de 10 a 15 tags relevantes. A lista de tags atual é: "${current.tags.join(', ')}". Evite repeti-las e crie alternativas. Incorpore esta nova ideia: "${idea}".`,
     description: (input, current, idea) => `Você é um especialista em SEO para YouTube. Para um vídeo sobre "${input.theme}", escreva uma **nova e diferente** descrição otimizada para SEO. A descrição atual começa com: "${current.description.substring(0, 200)}...". Crie uma versão alternativa. Incorpore esta nova ideia: "${idea}". A nova descrição deve ser bem estruturada, ter até 2.000 caracteres e terminar com uma forte CTA.`,
